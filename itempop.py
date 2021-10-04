@@ -1,12 +1,13 @@
-# Author: Harshdeep Gupta
+# Modified by: Jiatong Han
+# Original Author: Harshdeep Gupta
 # Date: 02 October, 2018
 # Description: Implements the item popularity model for recommendations
 
 
 # Workspace imports
-from evaluate import evaluate_model
+from MLP_evaluate import evaluate_model
 from utils import test, plot_statistics
-from Dataset import MovieLensDataset
+from MLP_dataset import ModuleEnrolmentDataset
 
 # Python imports
 import argparse
@@ -63,7 +64,7 @@ def main():
     # Load data
 
     t1 = time()
-    full_dataset = MovieLensDataset(path + dataset, num_negatives_test= num_negatives_test)
+    full_dataset = ModuleEnrolmentDataset(path + dataset, num_negatives_test= num_negatives_test)
     train, testRatings, testNegatives = full_dataset.trainMatrix, full_dataset.testRatings, full_dataset.testNegatives
     num_users, num_items = train.shape
     print("Load data done [%.1f s]. #user=%d, #item=%d, #train=%d, #test=%d"

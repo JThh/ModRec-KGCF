@@ -1,0 +1,59 @@
+2021-10-03 19:58:49 INFO     Model: TransE
+2021-10-03 19:58:49 INFO     Data Path: Data/Module
+2021-10-03 19:58:49 INFO     #entity: 1938
+2021-10-03 19:58:49 INFO     #relation: 10
+2021-10-03 19:58:49 INFO     #train: 15398
+2021-10-03 19:58:49 INFO     #valid: 2045
+2021-10-03 19:58:49 INFO     #test: 2332
+2021-10-03 19:58:49 INFO     Model Parameter Configuration:
+2021-10-03 19:58:49 INFO     Parameter gamma: torch.Size([1]), require_grad = False
+2021-10-03 19:58:49 INFO     Parameter embedding_range: torch.Size([1]), require_grad = False
+2021-10-03 19:58:49 INFO     Parameter entity_embedding: torch.Size([1938, 1000]), require_grad = True
+2021-10-03 19:58:49 INFO     Parameter relation_embedding: torch.Size([10, 1000]), require_grad = True
+2021-10-03 19:58:49 INFO     Ramdomly Initializing TransE Model...
+2021-10-03 19:58:49 INFO     Start Training...
+2021-10-03 19:58:49 INFO     init_step = 0
+2021-10-03 19:58:49 INFO     batch_size = 1024
+2021-10-03 19:58:49 INFO     negative_adversarial_sampling = 1
+2021-10-03 19:58:49 INFO     hidden_dim = 1000
+2021-10-03 19:58:49 INFO     gamma = 24.000000
+2021-10-03 19:58:49 INFO     negative_adversarial_sampling = True
+2021-10-03 19:58:49 INFO     adversarial_temperature = 1.000000
+2021-10-03 19:58:49 INFO     learning_rate = 0
+2021-10-03 19:58:58 INFO     Training average positive_sample_loss at step 0: 0.058874
+2021-10-03 19:58:58 INFO     Training average negative_sample_loss at step 0: 4.165792
+2021-10-03 19:58:58 INFO     Training average loss at step 0: 2.112333
+2021-10-03 19:58:58 INFO     Evaluating on Valid Dataset...
+2021-10-03 19:58:58 INFO     Evaluating the model... (0/256)
+2021-10-03 19:59:21 INFO     Valid MRR at step 0: 0.005332
+2021-10-03 19:59:21 INFO     Valid MR at step 0: 884.642787
+2021-10-03 19:59:21 INFO     Valid HITS@1 at step 0: 0.000000
+2021-10-03 19:59:21 INFO     Valid HITS@3 at step 0: 0.001956
+2021-10-03 19:59:21 INFO     Valid HITS@10 at step 0: 0.009291
+2021-10-03 20:06:54 INFO     Training average positive_sample_loss at step 100: 0.465108
+2021-10-03 20:06:54 INFO     Training average negative_sample_loss at step 100: 1.712025
+2021-10-03 20:06:54 INFO     Training average loss at step 100: 1.088567
+2021-10-03 20:16:41 INFO     Training average positive_sample_loss at step 200: 0.454577
+2021-10-03 20:16:41 INFO     Training average negative_sample_loss at step 200: 0.635528
+2021-10-03 20:16:41 INFO     Training average loss at step 200: 0.545052
+2021-10-03 20:25:55 INFO     Training average positive_sample_loss at step 300: 0.403241
+2021-10-03 20:25:55 INFO     Training average negative_sample_loss at step 300: 0.482654
+2021-10-03 20:25:55 INFO     Training average loss at step 300: 0.442948
+2021-10-03 20:38:43 INFO     Training average positive_sample_loss at step 400: 0.362032
+2021-10-03 20:38:43 INFO     Training average negative_sample_loss at step 400: 0.413320
+2021-10-03 20:38:43 INFO     Training average loss at step 400: 0.387676
+2021-10-03 20:47:58 INFO     Training average positive_sample_loss at step 500: 0.326646
+2021-10-03 20:47:58 INFO     Training average negative_sample_loss at step 500: 0.363667
+2021-10-03 20:47:58 INFO     Training average loss at step 500: 0.345156
+2021-10-03 20:57:40 INFO     Training average positive_sample_loss at step 600: 0.297680
+2021-10-03 20:57:40 INFO     Training average negative_sample_loss at step 600: 0.324708
+2021-10-03 20:57:40 INFO     Training average loss at step 600: 0.311194
+2021-10-03 21:05:59 INFO     Training average positive_sample_loss at step 700: 0.271378
+2021-10-03 21:05:59 INFO     Training average negative_sample_loss at step 700: 0.291878
+2021-10-03 21:05:59 INFO     Training average loss at step 700: 0.281628
+2021-10-03 21:13:50 INFO     Training average positive_sample_loss at step 800: 0.248842
+2021-10-03 21:13:50 INFO     Training average negative_sample_loss at step 800: 0.264194
+2021-10-03 21:13:50 INFO     Training average loss at step 800: 0.256518
+2021-10-03 21:22:52 INFO     Training average positive_sample_loss at step 900: 0.230267
+2021-10-03 21:22:52 INFO     Training average negative_sample_loss at step 900: 0.242016
+2021-10-03 21:22:52 INFO     Training average loss at step 900: 0.236141

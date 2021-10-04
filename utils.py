@@ -1,3 +1,4 @@
+# Modified by Jiatong Han
 # Author: Harshdeep Gupta
 # Date: 21 September, 2018
 # Description: A file for providing utility functions
@@ -7,76 +8,134 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import seaborn as sns
 import torch
+import torch.nn as nn
+from torch.nn.init import xavier_normal_, xavier_uniform_, constant_
 
 # workspace imports
-from evaluate import evaluate_model
-from Dataset import MovieLensDataset
+from MLP_evaluate import evaluate_seq_model
+from MLP_dataset import ModuleEnrolmentDataset
 
-def train_one_epoch(model, data_loader, loss_fn, optimizer, epoch_no, device, verbose = 1):
-    'trains the model for one epoch and returns the loss'
-    print("Epoch = {}".format(epoch_no))
-    # Training
-    # get user, item and rating data
-    t1 = time()
-    epoch_loss = []
-    # put the model in train mode before training
-    model.train()
-    # transfer the data to GPU
-    for feed_dict in data_loader:
-        for key in feed_dict:
-            if type(feed_dict[key]) != type(None):
-                feed_dict[key] = feed_dict[key].to(dtype = torch.long, device = device)
-        # get the predictions
-        prediction = model(feed_dict)
-        # print(prediction.shape)
-        # get the actual targets
-        rating = feed_dict['rating']
-        
-      
-        # convert to float and change dim from [batch_size] to [batch_size,1]
-        rating = rating.float().view(prediction.size())  
-        loss = loss_fn(prediction, rating)
-        # clear the gradients
-        optimizer.zero_grad()
-        # backpropagate
-        loss.backward()
-        # update weights
-        optimizer.step()
-        # accumulate the loss for monitoring
-        epoch_loss.append(loss.item())
-    epoch_loss = np.mean(epoch_loss)
-    if verbose:
-        print("Epoch completed {:.1f} s".format(time() - t1))
-        print("Train Loss: {}".format(epoch_loss))
-    return epoch_loss
-        
+def xavier_normal_initialization(module):
+    r""" using `xavier_normal_`_ in PyTorch to initialize the parameters in
+    nn.Embedding and nn.Linear layers. For bias in nn.Linear layers,
+    using constant 0 to initialize.
+    .. _`xavier_normal_`:
+        https://pytorch.org/docs/stable/nn.init.html?highlight=xavier_normal_#torch.nn.init.xavier_normal_
+    Examples:
+        >>> self.apply(xavier_normal_initialization)
+    """
+    if isinstance(module, nn.Embedding):
+        xavier_normal_(module.weight.data)
+    elif isinstance(module, nn.Linear):
+        xavier_normal_(module.weight.data)
+        if module.bias is not None:
+            constant_(module.bias.data, 0)
 
 
+def xavier_uniform_initialization(module):
+    r""" using `xavier_uniform_`_ in PyTorch to initialize the parameters in
+    nn.Embedding and nn.Linear layers. For bias in nn.Linear layers,
+    using constant 0 to initialize.
+    .. _`xavier_uniform_`:
+        https://pytorch.org/docs/stable/nn.init.html?highlight=xavier_uniform_#torch.nn.init.xavier_uniform_
+    Examples:
+        >>> self.apply(xavier_uniform_initialization)
+    """
+    if isinstance(module, nn.Embedding):
+        xavier_uniform_(module.weight.data)
+    elif isinstance(module, nn.Linear):
+        xavier_uniform_(module.weight.data)
+        if module.bias is not None:
+            constant_(module.bias.data, 0)
 
-def test(model, full_dataset : MovieLensDataset, topK):
-    'Test the HR and NDCG for the model @topK'
-    # put the model in eval mode before testing
-    if hasattr(model,'eval'):
-        # print("Putting the model in eval mode")
-        model.eval()
-    t1 = time()
-    (hits, ndcgs) = evaluate_model(model, full_dataset, topK)
-    hr, ndcg = np.array(hits).mean(), np.array(ndcgs).mean()
-    print('Eval: HR = %.4f, NDCG = %.4f [%.1f s]' % (hr, ndcg, time()-t1))
-    return hr, ndcg
-    
 
+class BPRLoss(nn.Module):
+    """ BPRLoss, based on Bayesian Personalized Ranking
+    Args:
+        - gamma(float): Small value to avoid division by zero
+    Shape:
+        - Pos_score: (N)
+        - Neg_score: (N), same shape as the Pos_score
+        - Output: scalar.
+    Examples::
+        >>> loss = BPRLoss()
+        >>> pos_score = torch.randn(3, requires_grad=True)
+        >>> neg_score = torch.randn(3, requires_grad=True)
+        >>> output = loss(pos_score, neg_score)
+        >>> output.backward()
+    """
+
+    def __init__(self, gamma=1e-10):
+        super(BPRLoss, self).__init__()
+        self.gamma = gamma
+
+    def forward(self, pos_score, neg_score):
+        loss = -torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
+        return loss
+
+
+class RegLoss(nn.Module):
+    """ RegLoss, L2 regularization on model parameters
+    """
+
+    def __init__(self):
+        super(RegLoss, self).__init__()
+
+    def forward(self, parameters):
+        reg_loss = None
+        for W in parameters:
+            if reg_loss is None:
+                reg_loss = W.norm(2)
+            else:
+                reg_loss = reg_loss + W.norm(2)
+        return reg_loss
+
+
+class EmbLoss(nn.Module):
+    """ EmbLoss, regularization on embeddings
+    """
+
+    def __init__(self, norm=2):
+        super(EmbLoss, self).__init__()
+        self.norm = norm
+
+    def forward(self, *embeddings):
+        emb_loss = torch.zeros(1).to(embeddings[-1].device)
+        for embedding in embeddings:
+            emb_loss += torch.norm(embedding, p=self.norm)
+        emb_loss /= embeddings[-1].shape[0]
+        return emb_loss
+
+
+class EmbMarginLoss(nn.Module):
+    """ EmbMarginLoss, regularization on embeddings
+    """
+
+    def __init__(self, power=2):
+        super(EmbMarginLoss, self).__init__()
+        self.power = power
+
+    def forward(self, *embeddings):
+        dev = embeddings[-1].device
+        cache_one = torch.tensor(1.0).to(dev)
+        cache_zero = torch.tensor(0.0).to(dev)
+        emb_loss = torch.tensor(0.).to(dev)
+        for embedding in embeddings:
+            norm_e = torch.sum(embedding ** self.power, dim=1, keepdim=True)
+            emb_loss += torch.sum(torch.max(norm_e - cache_one, cache_zero))
+        return emb_loss
 
 
 def plot_statistics(hr_list, ndcg_list, loss_list, model_alias, path):
     'plots and saves the figures to a local directory'
     plt.figure()
-    hr = np.array(hr_list)
-    ndcg = np.array(ndcg_list)
-    loss = np.array(loss_list)
-    plt.plot(hr[:,0], hr[:,1],linestyle='-', marker='o', label = "HR")
-    plt.plot(ndcg[:,0], ndcg[:,1],linestyle='-', marker='v', label = "NDCG")
-    plt.plot(loss[:,0], loss[:,1],linestyle='-', marker='s', label = "Loss")
+    # hr = np.array(hr_list)
+    # ndcg = np.array(ndcg_list)
+    # loss = np.array(loss_list)
+    x_range = list(range(0,len(hr_list)))
+    plt.plot(x_range, hr_list,linestyle='-', marker='o', label = "HR")
+    plt.plot(x_range, ndcg_list,linestyle='-', marker='v', label = "NDCG")
+    plt.plot(x_range, loss_list,linestyle='-', marker='s', label = "Loss")
 
     plt.xlabel("Epochs")
     plt.ylabel("Value")

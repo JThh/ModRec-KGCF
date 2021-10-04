@@ -1,17 +1,12 @@
-# Author: Harshdeep Gupta
-# Date: 07 September, 2018
-# Description: Splits the data into train and test using the leave the latest one out strategy 
-
-
 import pandas as pd
 import numpy as np
 from utils import save_to_csv
 
-INPUT_PATH = 'Data/u.data'
+INPUT_PATH = 'Data/module_enrolment.txt'
 
-OUTPUT_PATH_TRAIN = 'Data/movielens.train.rating'
-OUTPUT_PATH_TEST = 'Data/movielens.test.rating'
-USER_FIELD = 'userID'
+OUTPUT_PATH_TRAIN = 'Data/module.train.rating'
+OUTPUT_PATH_TEST = 'Data/module.test.rating'
+USER_FIELD = 'studentID'
 
 def get_train_test_df(transactions):
     '''
@@ -29,11 +24,9 @@ def get_train_test_df(transactions):
     train_df = transactions[last_transaction_mask]
     test_df = transactions[~last_transaction_mask]
     
-    train_df.sort_values(by=["userID", 'timestamp'], inplace = True)
-    test_df.sort_values(by=["userID", 'timestamp'], inplace = True)
+    train_df.sort_values(by=["studentID", 'timestamp'], inplace = True)
+    test_df.sort_values(by=["studentID", 'timestamp'], inplace = True)
     return train_df, test_df
-
-
 
     
 
@@ -48,11 +41,11 @@ def report_stats(transactions, train_df, test_df):
 
 def main():
 
-    transactions = pd.read_csv(INPUT_PATH, sep="\t", names = ['userID', 'movieID', 'rating', 'timestamp'], engine = 'python')
+    transactions = pd.read_csv(INPUT_PATH, sep="\t", names = ['studentID', 'moduleID', 'grade_points', 'timestamp'], engine = 'python')
     # print(transactions.head())
 
     # convert to implicit scenario
-    transactions['rating'] = 1
+    transactions['grade_points'] = 1
     
     # make the dataset
     train_df, test_df = get_train_test_df(transactions)
