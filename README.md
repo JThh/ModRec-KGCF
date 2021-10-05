@@ -24,3 +24,4 @@ The following command runs the model and prints the metrics
 python MLP.py
 `
 
+# ModRec-KGCF
