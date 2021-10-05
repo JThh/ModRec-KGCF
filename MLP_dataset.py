@@ -162,16 +162,24 @@ class ModuleEnrolmentDataset(Dataset):
         'Load the datasets from disk, and store them in appropriate structures'
 
         self.trainMatrix = self.load_rating_file_as_matrix(
-            file_name + ".train")
+            file_name + "train.tsv")
         self.num_users, self.num_items = self.trainMatrix.shape
         # make training set with negative sampling
-        self.user_input, self.item_input, self.ratings = self.get_train_instances(
+        self.user_input, self.item_input = self.get_train_instances(
             self.trainMatrix, num_negatives_train)
         # make testing set with negative sampling
         self.testRatings = self.load_rating_file_as_list(
-            file_name + ".test")
+            file_name + "test.tsv")        
+        self.validRatings = self.load_rating_file_as_list(
+            file_name + "valid.tsv")
+        self.trainRatings = self.load_rating_file_as_list(
+            file_name + "train.tsv")      
         self.testNegatives = self.create_negative_file(
-            num_samples=num_negatives_test)
+            num_negatives_test,'test')
+        self.validNegatives = self.create_negative_file(
+            num_negatives_test,'valid')
+        self.trainNegatives = self.create_negative_file(
+            num_negatives_test,'train')
 
         assert len(self.testRatings) == len(self.testNegatives)
 
@@ -185,11 +193,9 @@ class ModuleEnrolmentDataset(Dataset):
         # get the train data
         user_id = self.user_input[index]
         item_id = self.item_input[index]
-        rating = self.ratings[index]
 
         return {'user_id': user_id,
-                'item_id': item_id,
-                'rating': rating}
+                'item_id': item_id}
 
     def get_train_instances(self, train, num_negatives):
         user_input, item_input = [], []
@@ -209,19 +215,18 @@ class ModuleEnrolmentDataset(Dataset):
         return user_input, item_input
 
     def load_rating_file_as_list(self, filename):
-        ratingList = []
-        with open(filename, "r") as f:
-            line = f.readline()
-            while line != None and line != "":
-                arr = line.split("\t")
-                user, item = int(arr[0]), int(arr[1])
-                ratingList.append([user, item])
-                line = f.readline()
-        return ratingList
+        return pd.read_csv(filename,sep='\t',header=False).values
 
-    def create_negative_file(self, num_samples=100):
+    def create_negative_file(self, num_samples, setting):
         negativeList = []
-        for user_item_pair in self.testRatings:
+        if setting == 'valid':
+            ratings = self.validRatings
+        elif setting == 'train':
+            ratings = self.trainRatings
+        else:
+            ratings = self.testRatings
+        
+        for user_item_pair in ratings:
             user = user_item_pair[0]
             item = user_item_pair[1]
             negatives = []

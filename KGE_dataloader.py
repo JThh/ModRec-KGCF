@@ -182,3 +182,20 @@ class BidirectionalOneShotIterator(object):
         while True:
             for data in dataloader:
                 yield data
+
+class SingledirectionalOneShotIterator(object):
+    def __init__(self, dataloader):
+        self.iterator = self.one_shot_iterator(dataloader)
+        
+    def __next__(self):
+        data = next(self.iterator)
+        return data
+    
+    @staticmethod
+    def one_shot_iterator(dataloader):
+        '''
+        Transform a PyTorch Dataloader into python iterator
+        '''
+        while True:
+            for data in dataloader:
+                yield data

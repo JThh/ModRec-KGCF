@@ -1,0 +1,31 @@
+2021-10-04 16:07:35 INFO     Model: TransE
+2021-10-04 16:07:35 INFO     Data Path: Data/Module
+2021-10-04 16:07:35 INFO     #entity: 1938
+2021-10-04 16:07:35 INFO     #relation: 10
+2021-10-04 16:07:35 INFO     #train: 15398
+2021-10-04 16:07:35 INFO     #valid: 2045
+2021-10-04 16:07:35 INFO     #test: 2332
+2021-10-04 16:07:35 INFO     Model Parameter Configuration:
+2021-10-04 16:07:35 INFO     Parameter gamma: torch.Size([1]), require_grad = False
+2021-10-04 16:07:35 INFO     Parameter embedding_range: torch.Size([1]), require_grad = False
+2021-10-04 16:07:35 INFO     Parameter entity_embedding: torch.Size([1938, 1000]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter relation_embedding: torch.Size([10, 1000]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter beta: torch.Size([1]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter user_embedding.weight: torch.Size([1938, 8]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter item_embedding.weight: torch.Size([1938, 8]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter fc_layers.0.weight: torch.Size([16, 8]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter fc_layers.0.bias: torch.Size([16]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter fc_layers.1.weight: torch.Size([8, 16]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter fc_layers.1.bias: torch.Size([8]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter output_layer.weight: torch.Size([1, 8]), require_grad = True
+2021-10-04 16:07:35 INFO     Parameter output_layer.bias: torch.Size([1]), require_grad = True
+2021-10-04 16:07:35 INFO     Randomly Initializing TransE Model...
+2021-10-04 16:07:35 INFO     Start Training...
+2021-10-04 16:07:35 INFO     init_step = 0
+2021-10-04 16:07:35 INFO     batch_size = 1024
+2021-10-04 16:07:35 INFO     negative_adversarial_sampling = 1
+2021-10-04 16:07:35 INFO     hidden_dim = 1000
+2021-10-04 16:07:35 INFO     gamma = 24.000000
+2021-10-04 16:07:35 INFO     negative_adversarial_sampling = True
+2021-10-04 16:07:35 INFO     adversarial_temperature = 1.000000
+2021-10-04 16:07:35 INFO     learning_rate = 0

@@ -8,17 +8,18 @@ import argparse
 import json
 import logging
 import os
-import random
 
 import numpy as np
+from numpy.core.overrides import ArgSpec
+import pandas as pd
 import torch
 
 from torch.utils.data import DataLoader
 
-from KGE import KGEModel
+from KGMLP import KGMLP
 
 from KGE_dataloader import TrainDataset
-from KGE_dataloader import BidirectionalOneShotIterator
+from KGE_dataloader import BidirectionalOneShotIterator, SingledirectionalOneShotIterator
 from MLP_dataset import ModuleEnrolmentDataset
 
 def parse_args(args=None):
@@ -220,20 +221,20 @@ def main(args):
     test_triples = read_triple(os.path.join(args.data_path, 'test.txt'), entity2id, relation2id)
     logging.info('#test: %d' % len(test_triples))
 
-    cf_dataset = ModuleEnrolmentDataset(
-        args.data_path + args.dataset)
+    # cf_dataset = ModuleEnrolmentDataset(
+    #     args.data_path)
 
-    nuser, nitem = cf_dataset.num_users, cf_dataset.num_items
+    # nuser, nitem = cf_dataset.num_users, cf_dataset.num_items
     
     #All true triples
     all_true_triples = train_triples + valid_triples + test_triples
     
-    kge_model = KGEModel(
+    kge_model = KGMLP(
         model_name=args.model,
         nentity=nentity,
         nrelation=nrelation,
-        nuser=nuser,
-        nitem=nitem,
+        nuser=nentity,
+        nitem=nentity,
         hidden_dim=args.hidden_dim,
         gamma=args.gamma,
         double_entity_embedding=args.double_entity_embedding,
@@ -265,10 +266,19 @@ def main(args):
             collate_fn=TrainDataset.collate_fn
         )
         
+        # train_iterator = SingledirectionalOneShotIterator(DataLoader(
+        #     TrainDataset(train_triples, nentity, nrelation, args.negative_sample_size, 'single'), 
+        #     batch_size=args.batch_size,
+        #     shuffle=True, 
+        #     num_workers=max(1, args.cpu_num//2),
+        #     collate_fn=TrainDataset.collate_fn
+        # ))
+        
+        
         train_iterator = BidirectionalOneShotIterator(train_dataloader_head, train_dataloader_tail)
 
-        training_cf_generator = DataLoader(
-            cf_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
+        # training_cf_generator = DataLoader(
+        #     cf_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
         # Set training configuration
         current_learning_rate = args.learning_rate
@@ -317,7 +327,7 @@ def main(args):
         #Training Loop
         for step in range(init_step, args.max_steps):
             
-            log = kge_model.train_step(kge_model, optimizer, train_iterator, training_cf_generator, args)
+            log = kge_model.train_step(kge_model, optimizer, train_iterator, args)
             
             training_logs.append(log)
             
@@ -347,7 +357,7 @@ def main(args):
                 
             if args.do_valid and step % args.valid_steps == 0:
                 logging.info('Evaluating on Valid Dataset...')
-                metrics = kge_model.test_step(kge_model, valid_triples, all_true_triples, cf_dataset, args)
+                metrics = kge_model.test_step(kge_model, valid_triples, all_true_triples, args)
                 log_metrics('Valid', step, metrics)
         
         save_variable_list = {
@@ -359,17 +369,17 @@ def main(args):
         
     if args.do_valid:
         logging.info('Evaluating on Valid Dataset...')
-        metrics = kge_model.test_step(kge_model, valid_triples, all_true_triples, cf_dataset, args)
+        metrics = kge_model.test_step(kge_model, valid_triples, all_true_triples, args)
         log_metrics('Valid', step, metrics)
     
     if args.do_test:
         logging.info('Evaluating on Test Dataset...')
-        metrics = kge_model.test_step(kge_model, test_triples, all_true_triples, cf_dataset, args,)
+        metrics = kge_model.test_step(kge_model, test_triples, all_true_triples, args)
         log_metrics('Test', step, metrics)
     
     if args.evaluate_train:
         logging.info('Evaluating on Training Dataset...')
-        metrics = kge_model.test_step(kge_model, train_triples, all_true_triples, cf_dataset, args)
+        metrics = kge_model.test_step(kge_model, train_triples, all_true_triples, args)
         log_metrics('Train', step, metrics)
         
 if __name__ == '__main__':

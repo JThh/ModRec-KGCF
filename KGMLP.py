@@ -64,6 +64,19 @@ class KGMLP(nn.Module):
 
         # user and item embedding layers
         embedding_dim = int(mlp_layers[0]/2)
+        # self.user_embedding = nn.Parameter(torch.zeros(nentity, embedding_dim))
+        # nn.init.uniform_(
+        #     tensor=self.user_embedding, 
+        #     a=-self.embedding_range.item(), 
+        #     b=self.embedding_range.item()
+        # )
+        # embedding_dim = int(mlp_layers[0])
+        # self.item_embedding = nn.Parameter(torch.zeros(nentity, embedding_dim))
+        # nn.init.uniform_(
+        #     tensor=self.item_embedding, 
+        #     a=-self.embedding_range.item(), 
+        #     b=self.embedding_range.item()
+        # )
         self.user_embedding = torch.nn.Embedding(nuser, embedding_dim)
         self.item_embedding = torch.nn.Embedding(nitem, embedding_dim)
 
@@ -75,7 +88,7 @@ class KGMLP(nn.Module):
         # final prediction layer
         self.output_layer = torch.nn.Linear(mlp_layers[-1], 1)
 
-        self.beta = nn.Parameter(torch.Tensor([1]),requires_grad=True)
+        self.beta = nn.Parameter(torch.Tensor([1]),requires_grad=False)
 
         if model_name == 'pRotatE':
             self.modulus = nn.Parameter(torch.Tensor([[0.5 * self.embedding_range.item()]]))
@@ -90,7 +103,7 @@ class KGMLP(nn.Module):
         if model_name == 'ComplEx' and (not double_entity_embedding or not double_relation_embedding):
             raise ValueError('ComplEx should use --double_entity_embedding and --double_relation_embedding')
         
-    def forward(self, kg_sample, cf_sample, mode='single'):
+    def forward(self, kg_sample, mode='single'):
         '''
         Forward function that calculate the score of a batch of triples.
         In the 'single' mode, sample is a batch of triple.
@@ -100,6 +113,9 @@ class KGMLP(nn.Module):
         Because negative samples and positive samples usually share two elements 
         in their triple ((head, relation) or (relation, tail)).
         '''
+
+        # print(kg_sample)
+        # exit()
 
         if mode == 'single':
             batch_size, negative_sample_size = kg_sample.size(0), 1
@@ -121,6 +137,22 @@ class KGMLP(nn.Module):
                 dim=0, 
                 index=kg_sample[:,2]
             ).unsqueeze(1)
+
+            users = kg_sample[:,0]
+            items = kg_sample[:,2]
+
+
+            # users = torch.index_select(
+            #     self.user_embedding, 
+            #     dim=0, 
+            #     index=kg_sample[:,0]
+            # ).unsqueeze(1)
+            
+            # items = torch.index_select(
+            #     self.item_embedding, 
+            #     dim=0, 
+            #     index=kg_sample[:,2]
+            # ).unsqueeze(1)
             
         elif mode == 'head-batch':
             tail_part, head_part = kg_sample
@@ -143,6 +175,21 @@ class KGMLP(nn.Module):
                 dim=0, 
                 index=tail_part[:, 2]
             ).unsqueeze(1)
+
+            users = tail_part[:, 0]
+            items = tail_part[:, 2]
+
+            # users = torch.index_select(
+            #     self.user_embedding, 
+            #     dim=0, 
+            #     index=head_part.view(-1)
+            # ).view(batch_size, negative_sample_size, -1)
+            
+            # items = torch.index_select(
+            #     self.item_embedding, 
+            #     dim=0, 
+            #     index=tail_part[:, 2]
+            # ).view(batch_size, negative_sample_size, -1)
             
         elif mode == 'tail-batch':
             head_part, tail_part = kg_sample
@@ -165,6 +212,22 @@ class KGMLP(nn.Module):
                 dim=0, 
                 index=tail_part.view(-1)
             ).view(batch_size, negative_sample_size, -1)
+
+            # users = torch.index_select(
+            #     self.user_embedding, 
+            #     dim=0, 
+            #     index=head_part[:, 0]
+            # ).unsqueeze(1)
+            
+            # items = torch.index_select(
+            #     self.item_embedding, 
+            #     dim=0, 
+            #     index=tail_part.view(-1)
+            # ).view(batch_size, negative_sample_size, -1)
+
+            users = head_part[:, 0]
+            items = head_part[:, 2]
+
             
         else:
             raise ValueError('mode %s not supported' % mode)
@@ -182,12 +245,15 @@ class KGMLP(nn.Module):
         else:
             raise ValueError('model %s not supported' % self.model_name)
 
-        users = cf_sample['user_id']
-        items = cf_sample['item_id']
         user_embedding = self.user_embedding(users)
         item_embedding = self.item_embedding(items)
+        # print(mode)
+        # print(user_embedding.shape)
+        # print(item_embedding.shape)
         # concatenate user and item embeddings to form input
         x = torch.cat([user_embedding, item_embedding], 1)
+        # print(users.shape)
+        # print(items.shape)
         for idx, _ in enumerate(range(len(self.fc_layers))):
             x = self.fc_layers[idx](x)
             x = F.relu(x)
@@ -196,6 +262,9 @@ class KGMLP(nn.Module):
         cf_loss = torch.sigmoid(logit)
         
         return score, self.beta * cf_loss
+
+    # def GCN():
+
     
     def TransE(self, head, relation, tail, mode):
         if mode == 'head-batch':
@@ -283,7 +352,7 @@ class KGMLP(nn.Module):
         return score
     
     @staticmethod
-    def train_step(model, optimizer, kg_train_iterator, cf_train_iterator, args):
+    def train_step(model, optimizer, kg_train_iterator, args):
         '''
         A single train step. Apply back-propation and return the loss
         '''
@@ -299,9 +368,10 @@ class KGMLP(nn.Module):
             negative_sample = negative_sample.cuda()
             subsampling_weight = subsampling_weight.cuda()
 
-        cf_sample = next(cf_train_iterator)
+        # cf_sample = next(cf_train_iterator)
 
-        negative_score, cf_loss = model((positive_sample, negative_sample), cf_sample, mode=mode)
+        # negative_score = model((positive_sample, negative_sample), cf_sample, mode=mode)
+        negative_score, cf_loss = model((positive_sample, negative_sample), mode=mode)
 
         if args.negative_adversarial_sampling:
             #In self-adversarial sampling, we do not apply back-propagation on the sampling weight
@@ -310,9 +380,9 @@ class KGMLP(nn.Module):
         else:
             negative_score = F.logsigmoid(-negative_score).mean(dim = 1)
 
-        positive_score = model(positive_sample, cf_sample)
+        positive_score, _ = model(positive_sample)
 
-        positive_score, _ = F.logsigmoid(positive_score).squeeze(dim = 1)
+        positive_score = F.logsigmoid(positive_score).squeeze(dim = 1)
 
         if args.uni_weight:
             positive_sample_loss = - positive_score.mean()
@@ -321,7 +391,7 @@ class KGMLP(nn.Module):
             positive_sample_loss = - (subsampling_weight * positive_score).sum()/subsampling_weight.sum()
             negative_sample_loss = - (subsampling_weight * negative_score).sum()/subsampling_weight.sum()
 
-        loss = (positive_sample_loss + negative_sample_loss)/2 + cf_loss
+        loss = (positive_sample_loss + negative_sample_loss)/2
         
         if args.regularization != 0.0:
             #Use L3 regularization for ComplEx and DistMult
@@ -335,6 +405,7 @@ class KGMLP(nn.Module):
             regularization_log = {}
             
         loss.backward()
+        # cf_loss.backward()
 
         optimizer.step()
 
@@ -348,7 +419,7 @@ class KGMLP(nn.Module):
         return log
     
     @staticmethod
-    def test_step(model, test_triples, all_true_triples, cf_test_dataset, args, do_valid=True):
+    def test_step(model, test_triples, all_true_triples, args):
         '''
         Evaluate the model on test or valid datasets
         '''
@@ -408,14 +479,7 @@ class KGMLP(nn.Module):
                 collate_fn=TestDataset.collate_fn
             )
             
-            test_dataset_list = [test_dataloader_head, test_dataloader_tail]
-            
-            if (do_valid):
-                test_ratings = cf_test_dataset.validRatings
-                test_negatives = cf_test_dataset.validNegatives
-            else:
-                test_ratings = cf_test_dataset.testRatings
-                test_negatives = cf_test_dataset.testNegatives
+            test_dataset_list = [test_dataloader_head, test_dataloader_tail]             
             
             logs = []
 
@@ -425,17 +489,6 @@ class KGMLP(nn.Module):
             with torch.no_grad():
                 for test_dataset in test_dataset_list:
                     for positive_sample, negative_sample, filter_bias, mode in test_dataset:
-                        rating = test_ratings[step]
-                        items = test_negatives[step]
-                        u = rating[0]
-                        gtItem = rating[1]
-                        items.append(gtItem)
-                        users = np.full(len(items), u, dtype='int32')
-
-                        feed_dict = {
-                            'user_id': users,
-                            'item_id': np.array(items),
-                        }
                         if args.cuda:
                             positive_sample = positive_sample.cuda()
                             negative_sample = negative_sample.cuda()
@@ -443,8 +496,8 @@ class KGMLP(nn.Module):
 
                         batch_size = positive_sample.size(0)
 
-                        score = model((positive_sample, negative_sample), feed_dict, mode)
-                        score += filter_bias
+                        score, cf_loss = model((positive_sample, negative_sample), mode)
+                        score += filter_bias + cf_loss
 
                         #Explicitly sort all the entities to ensure that there is no test exposure bias
                         argsort = torch.argsort(score, dim = 1, descending=True)

@@ -31,7 +31,7 @@ then
 
 echo "Start Training......"
 
-python3 -u $CODE_PATH/KGE_run.py --do_train \
+python3 -u $CODE_PATH/KGMLP_run.py --do_train \
     --do_valid \
     --do_test \
     --data_path $FULL_DATA_PATH \
@@ -47,14 +47,14 @@ then
 
 echo "Start Evaluation on Valid Data Set......"
 
-python3 -u $CODE_PATH/KGE_run.py --do_valid -init $SAVE
+python3 -u $CODE_PATH/KGMLP_run.py --do_valid -init $SAVE
     
 elif [ $MODE == "test" ]
 then
 
 echo "Start Evaluation on Test Data Set......"
 
-python3 -u $CODE_PATH/KGE_run.py --do_test -init $SAVE
+python3 -u $CODE_PATH/KGMLP_run.py --do_test -init $SAVE
 
 else
    echo "Unknown MODE" $MODE
