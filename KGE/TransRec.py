@@ -20,9 +20,8 @@ from torch.utils.data import Dataset, DataLoader
 torch.manual_seed(0)
 
 # Workspace imports
-from evaluate import evaluate_seq_model
-from Dataset import SequenceEnrolmentDataset, make_datasets
-from utils import seq_train_one_epoch, seq_test, plot_statistics, BPRLoss, EmbLoss, RegLoss, xavier_normal_initialization
+from MLP.MLP_dataset import SequenceEnrolmentDataset, make_datasets
+from MLP.utils import seq_train_one_epoch, seq_test, plot_statistics, BPRLoss, EmbLoss, RegLoss, xavier_normal_initialization
 
 # Python imports
 import argparse

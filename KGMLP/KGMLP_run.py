@@ -18,9 +18,8 @@ from torch.utils.data import DataLoader
 
 from KGMLP import KGMLP
 
-from KGE_dataloader import TrainDataset
-from KGE_dataloader import BidirectionalOneShotIterator, SingledirectionalOneShotIterator
-from MLP_dataset import ModuleEnrolmentDataset
+from KGE.KGE_dataloader import TrainDataset
+from KGE.KGE_dataloader import BidirectionalOneShotIterator, SingledirectionalOneShotIterator
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(

@@ -16,7 +16,7 @@ from sklearn.metrics import average_precision_score
 
 from torch.utils.data import DataLoader
 
-from KGE_dataloader import TestDataset
+from KGE.KGE_dataloader import TestDataset
 
 class KGMLP(nn.Module):
     def __init__(self, model_name, nentity, nrelation, nitem, nuser, hidden_dim, gamma, mlp_layers=[16, 8],
